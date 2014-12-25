@@ -13,6 +13,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -317,7 +318,7 @@ chpNatLangReqs lev fSpec =
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
-                       samplePop = (take 3 . fullContents (gens fSpec) (initialPops fSpec) . EDcD) dcl
+                       samplePop = (take 3 . Set.elems . fullContents (gens fSpec) (initialPops fSpec) . EDcD) dcl
                        sampleSentences =
                          [ Para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
                          | p <-samplePop
@@ -383,7 +384,7 @@ showViewAtom fSpec mDec cncpt atom =
      where showViewSegment (ViewText str') = str'
            showViewSegment (ViewHtml str') = str'
            showViewSegment (ViewExp objDef) =
-             case [ trgPaire p | p <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
+             case [ trgPaire p | p <- Set.elems $ fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
                []         -> ""
                viewAtom:_ -> viewAtom
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]

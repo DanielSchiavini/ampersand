@@ -17,6 +17,7 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List hiding (head)
+import qualified Data.Set as Set
 import Prelude hiding (head)
 --import Debug.Trace
 
@@ -350,7 +351,7 @@ instance ShowADL FSpec where
 --    ++ (if null (vprocesses fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (vprocesses fSpec))    ++ "\n")  -- TODO implement ShowADL FProcess
     ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
-    ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
+    ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec \\ concatMap identities (patterns fSpec)))       ++ "\n")
     ++ (if null decls then "" else "\n"++intercalate "\n"   (map showADL decls) ++ "\n")
     ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
@@ -378,16 +379,16 @@ instance ShowADL P_Population where
         _ -> ""
   ++ " CONTAINS\n"
   ++ if (case pop of
-            P_RelPopu{} -> null (p_popps pop)
-            P_TRelPop{} -> null (p_popps pop)
+            P_RelPopu{} -> null (Set.elems $ p_popps pop)
+            P_TRelPop{} -> null (Set.elems $ p_popps pop)
             P_CptPopu{} -> null (p_popas pop)
         )
      then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          P_RelPopu{} -> map showPaire (p_popps pop)
-                          P_TRelPop{} -> map showPaire (p_popps pop)
+                          P_RelPopu{} -> map showPaire (Set.elems $ p_popps pop)
+                          P_TRelPop{} -> map showPaire (Set.elems $ p_popps pop)
                           P_CptPopu{} -> map showAtom  (p_popas pop)
 showPaire :: Paire -> String
 showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
@@ -400,14 +401,14 @@ instance ShowADL Population where
         PCptPopu{} -> (name.popcpt) pop
   ++ " CONTAINS\n"
   ++ if (case pop of
-            PRelPopu{} -> null (popps pop)
+            PRelPopu{} -> null (Set.elems $ popps pop)
             PCptPopu{} -> null (popas pop)
         )
      then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          PRelPopu{} -> map showPaire (popps pop)
+                          PRelPopu{} -> map showPaire (Set.elems $ popps pop)
                           PCptPopu{} -> map showAtom  (popas pop)
 
 -- showADL (PRelPopu r pairs)

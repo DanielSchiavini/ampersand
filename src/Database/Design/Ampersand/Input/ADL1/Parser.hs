@@ -11,6 +11,7 @@ import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
@@ -284,7 +285,7 @@ pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*
                       <*> ((True <$ pKey "BYPLUG") `opt` False)
                       <*> (pPragma `opt` [])
                       <*> pList pMeaning
-                      <*> ((pKey "=" *> pContent) `opt` [])
+                      <*> ((pKey "=" *> pContent) `opt` Set.empty)
                       <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
                             = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
@@ -734,8 +735,9 @@ pLabel       = lbl <$> pADLid_val_pos <*  pKey ":"
                      lbl (nm,pos') = Lbl nm pos' []
 
 pContent :: AmpParser Pairs
-pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
-                <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
+pContent          =  Set.fromList <$>
+  (    pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
+   <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']') --obsolete
     where
     pRecord = mkPair<$> pValue <* pKey "*" <*> pValue
     pRecordObs = mkPair<$ pSpec '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete

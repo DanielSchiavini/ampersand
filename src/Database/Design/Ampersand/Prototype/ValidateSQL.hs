@@ -9,6 +9,7 @@ import System.Process
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
+import qualified Data.Set as Set
 import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Prototype.RelBinGenBasics
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
@@ -106,7 +107,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
 validateExp fSpec vExp@(exp, origin) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec$ exp
-    ; let violationsAmp = sort [(srcPaire p, trgPaire p) | p <- fullContents (gens fSpec) (initialPops fSpec) exp]
+    ; let violationsAmp = sort [(srcPaire p, trgPaire p) | p <- Set.toList $ fullContents (gens fSpec) (initialPops fSpec) exp]
 
     ; if violationsSQL == violationsAmp
       then

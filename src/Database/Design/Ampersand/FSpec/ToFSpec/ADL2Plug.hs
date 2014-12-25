@@ -16,7 +16,7 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
-import Data.List (nub,intercalate,intersect,partition,group,delete)
+import Data.List
 import GHC.Exts (sortWith)
 --import Debug.Trace
 
@@ -432,7 +432,7 @@ makeUserDefinedSqlPlug context obj
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isSur r]
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isTot r, not (isSur r)]
    attRels --all user-defined non-kernel fields are attributes of (rel2fld context (objctx c))
-     = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
+     = (rels \\ kernel) \\ [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugfields            = [fld r tp | (r,tp)<-plugMors]
    fld r tp              = (rel2fld context (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype

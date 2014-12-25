@@ -16,6 +16,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.List(nub)
+import qualified Data.Set as Set
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -521,7 +522,7 @@ pCtx2aCtx' _
                      , prcRules = map snd ruls'
                      , prcGens = map pGen2aGen gens
                      , prcDcls = decls'
-                     , prcUps = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+                     , prcUps = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not . Set.null . popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                      , prcIds = idefs'
@@ -547,7 +548,7 @@ pCtx2aCtx' _
                       , ptrls = prules
                       , ptgns = agens'
                       , ptdcs = decls'
-                      , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+                      , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not . Set.null . popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls

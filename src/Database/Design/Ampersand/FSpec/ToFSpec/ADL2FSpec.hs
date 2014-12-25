@@ -18,6 +18,8 @@ import Text.Pandoc
 import Data.Maybe
 import Data.List
 import Data.Char
+import qualified Data.Set as Set
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -76,12 +78,12 @@ makeFSpec opts context = fSpec
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , initialPops  = initialpops
-              , allViolations  = [ (r,vs)
+              , allViolations  = [ (r,Set.elems vs)
                                  | r <- allrules, not (isSignal r)
-                                 , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
-              , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
+                                 , let vs = ruleviolations (gens context) initialpops r, not (Set.null vs) ]
+              , initialConjunctSignals = [ (conj, Set.elems $ viols) | conj <- allConjs 
                                          , let viols = conjunctViolations (gens context) initialpops conj
-                                         , not $ null viols
+                                         , not $ Set.null viols
                                          ]
               }
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
@@ -102,7 +104,7 @@ makeFSpec opts context = fSpec
            }
         where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
      initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
-                             , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
+                             , popps  = Set.unions [ popps pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popdcl [ pop | pop@PRelPopu{}<-populations ] ] ++
                    [ PCptPopu{ popcpt = popcpt (head eqclass)
@@ -403,14 +405,14 @@ makeActivity fSpec rul
 ----------------------------------------------------
      clos :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
      clos xs
-       = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
+       = foldl f xs (nub (map fst3 xs) `intersect` nub (map thd3 xs))
          where
-          f q x = q `un`
-                     [(a, qs `uni` qs', b') | (a, qs, b) <- q, b == x,
+          f q x = q `union`
+                     [(a, qs `union` qs', b') | (a, qs, b) <- q, b == x,
                       (a', qs', b') <- q, a' == x]
           ts `un` [] = ts
           ts `un` ((a',qs',b'):ts')
-           = ([(a,qs `uni` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
+           = ([(a,qs `union` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
               [(a,qs,b)           | (a,qs,b)<-ts, a/=a' || b/=b']++
               [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
 

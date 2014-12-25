@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.List
 import Data.Maybe
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ViewPoint"
@@ -47,7 +48,7 @@ class ProcessStructure a where
   maintains :: a -> [(String,Rule)] -- ^ the string represents a Role
   mayEdit :: a -> [(String,Declaration)] -- ^ the string represents a Role
   workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
-  workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
+  workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-Set.elems $ ruleviolations gens' udp r]
 
 rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity

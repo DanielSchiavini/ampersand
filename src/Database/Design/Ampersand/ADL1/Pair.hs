@@ -1,13 +1,12 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.ADL1.Pair
                     ( Paire,Pairs
                     , srcPaire,trgPaire
                     , mkPair
-                    )
-where
+                    ) where
 
-   type Pairs = [Paire]
+   import Data.Set (Set)
+
+   type Pairs = Set Paire
    srcPaire :: Paire -> String
    trgPaire :: Paire -> String
    type Paire = (String,String)

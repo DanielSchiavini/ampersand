@@ -8,13 +8,14 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Data.List
 import System.FilePath
+import qualified Data.Set as Set
 
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
-chpDiagnosis fSpec
+chpDiagnosis fSpec = (mempty, []) {-
  = ( (chptHeader (fsLang fSpec) Diagnosis) <>
      fromList
      (
@@ -555,8 +556,8 @@ chpDiagnosis fSpec
                                       | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is dit correct? Waarom?
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
                                       | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is this correct? Why
-              (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
-              (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
+              (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (Set.size ps) "taak"++" zien.") ]
+              (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (Set.size ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
               (English,_,[_])      -> [ Str "This script contains work in progress. The following table provides details with line numbers from the original script file." ]
               (Dutch,  _,_)        -> [ Str "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden." ]
@@ -573,8 +574,8 @@ chpDiagnosis fSpec
           English ->
               [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popwork>1]++[Str "line#"]], [Plain [Str "#signals"] ]]
        )
-       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
-       | (r,ps)<-cl, length ps>0
+       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . Set.size) ps]]]
+       | (r,ps)<-cl, Set.size ps>0
        ]
      | (length.concat) popwork>1, cl<-popwork ]        ++
 -- the tables containing the actual work in progress population
@@ -593,17 +594,17 @@ chpDiagnosis fSpec
                   Dutch  ->
                      [ Str "Deze regel bevat nog werk (voor "]++
                      commaNLPandoc (Str "of") (nub [Str rol | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
-                     (if length ps == 1 then [Str ", te weten "]++oneviol r ps++[Str ". "] else
-                      [ Str (". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen.")]
+                     (if Set.size ps == 1 then [Str ", te weten "]++oneviol r ps++[Str ". "] else
+                      [ Str (". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen.")]
                      )
                   English ->
                      [ Str "This rule contains work"]++
                      commaEngPandoc (Str "or") (nub [Str rol | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
-                     if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
-                      [ Str ("The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")]
+                     if Set.size ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
+                      [ Str ("The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")]
 
               ) ]++
-       [ violtable r ps | length ps>1]
+       [ violtable r ps | Set.size ps>1]
      | (r,ps)<-concat popwork ]
      where
 --      text r
@@ -650,16 +651,16 @@ chpDiagnosis fSpec
                          <>  text (name r)
                        )
                <> para (text (case (fsLang fSpec,isSignal r) of
-                               (Dutch  , False) -> "Totaal aantal overtredingen: "++show (length ps)
-                               (English, False) -> "Total number of violations: " ++show (length ps)
-                               (Dutch  , True ) -> "Totaal aantal taken: "        ++show (length ps)
-                               (English, True ) -> "Total number of work items: " ++show (length ps)
+                               (Dutch  , False) -> "Totaal aantal overtredingen: "++show (Set.size ps)
+                               (English, False) -> "Total number of violations: " ++show (Set.size ps)
+                               (Dutch  , True ) -> "Totaal aantal taken: "        ++show (Set.size ps)
+                               (English, True ) -> "Total number of work items: " ++show (Set.size ps)
                              )
                        )
                <> table capt
                    [(AlignLeft,0)                          ,(AlignLeft,0)          ]
                    [(para.strong.text.name.source.rrexp) r,(para.strong.text.name.target.rrexp) r]
-                   (map showRow ps)
+                   (map showRow $ Set.elems ps)
 
      in (para (case (fsLang fSpec, invariantViolations, processViolations) of
                 (Dutch  ,[] , [] ) -> text "De populatie in dit script overtreedt geen regels. "
@@ -804,4 +805,4 @@ chpDiagnosis fSpec
              [ [[Plain [Str (srcPaire p)]], [Plain [Str (trgPaire p)]]]
              | p <-take 10 ps
              ]
-
+-}

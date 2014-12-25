@@ -32,13 +32,13 @@ consequent r
 
 conjunctViolations :: [A_Gen] -> [Population] -> Conjunct -> Pairs
 conjunctViolations gens pop conj =
-  let vConts    = Set.fromList $ fullContents gens pop (EDcV (sign (rc_conjunct conj)))
-      conjConts = Set.fromList $ fullContents gens pop (rc_conjunct conj)
-  in  Set.toList $ vConts `Set.difference` conjConts 
+  let vConts    = fullContents gens pop (EDcV (sign (rc_conjunct conj)))
+      conjConts = fullContents gens pop (rc_conjunct conj)
+  in  vConts `Set.difference` conjConts 
      
 ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
 ruleviolations gens pop r = case rrexp r of
-     EEqu{} -> (cra >- crc) ++ (crc >- cra)
+     EEqu{} -> (cra >- crc) `Set.union` (crc >- cra)
      EImp{} -> cra >- crc
      _      -> fullContents gens pop (EDcV (sign (consequent r))) >- crc  --everything not in con
      where cra = fullContents gens pop (antecedent r)

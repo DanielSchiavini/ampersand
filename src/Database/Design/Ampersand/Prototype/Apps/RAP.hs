@@ -8,6 +8,8 @@ import Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC
 import Database.HDBC
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import qualified Data.Set as Set
+
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "Ampersand.Prototype.Apps.RAP"
@@ -300,7 +302,7 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos
  = [ P_TRelPop { p_rnme  = rnm
                , p_orig  = OriginUnknown
                , p_type  = rsgn
-               , p_popps = rpop
+               , p_popps = Set.fromList $ rpop
                }
    | (rid,rnm)<-r_decnm
    , let rsgn = atlas2sign rid r_decsgn r_src r_trg r_cptnm
@@ -340,7 +342,7 @@ atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredt
          , dec_prM = geta r_decprM rid ""
          , dec_prR = geta r_decprR rid ""
          , dec_Mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_decmean rid ""))]
-         , dec_popu = []
+         , dec_popu = Set.empty
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
          }

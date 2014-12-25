@@ -12,6 +12,7 @@ import Data.Map (Map, (!), lookup, keys, assocs, elems, fromList, fromListWith, 
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
 import Data.List (nub)
+import qualified Data.Set as Set
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.Populated"
 
@@ -25,8 +26,8 @@ atomsOf gens pt c
      ONE -> ["1"] -- fatal 22 "Asking for the value of the universal singleton"
      PlainConcept{}
          -> let smallerconcs = c:smallerConcepts gens c in
-            nub$ [srcPaire p | pop@PRelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
-               ++[trgPaire p | pop@PRelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
+            nub$ [srcPaire p | pop@PRelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- Set.elems $popps pop]
+               ++[trgPaire p | pop@PRelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- Set.elems $popps pop]
                ++[a          | pop@PCptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 
 pairsOf :: [A_Gen] -> [Population] -> Declaration -> Map String [String]
@@ -35,7 +36,7 @@ pairsOf gens pt dcl
      Isn c  -> fromList [ (a,[a])   | a  <-atomsOf gens pt c]
      Vs sgn -> fromList [ (sa, atomsOf gens pt (target sgn)) | sa <-atomsOf gens pt (source sgn)]
      Sgn{}  -> unionsWith uni
-                      [ fromListWith uni [ (srcPaire p,[trgPaire p]) | p<-popps pop]
+                      [ fromListWith uni [ (srcPaire p,[trgPaire p]) | p<-Set.elems $ popps pop]
                       | pop@PRelPopu{} <- pt
                       , name dcl==name (popdcl pop)
                       , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts gens (source dcl)
@@ -43,7 +44,7 @@ pairsOf gens pt dcl
                       ]
 
 fullContents :: [A_Gen] -> [Population] -> Expression -> Pairs
-fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap, b<-pairMap ! a ]
+fullContents gens pt e = Set.fromList [ mkPair a b | let pairMap=contents e, a<-keys pairMap, b<-pairMap ! a ]
   where
    unions t1 t2 = unionWith uni t1 t2
    inters t1 t2 = mergeWithKey (\_ l r ->case l `isc` r of [] -> Nothing; atoms -> Just atoms) c c t1 t2

@@ -16,6 +16,7 @@ import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord
 import Data.Function
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ShowHS"
@@ -389,7 +390,7 @@ instance ShowHS FSpec where
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,Pairs) -> String
+              showViolatedRule :: String -> (Rule,[Paire]) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
@@ -629,7 +630,7 @@ instance ShowHS Population where
   = case pop of
       PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
           ++indent++"         , popps  = [ "++intercalate
-           (indent++"                    , ") (map show (popps pop))
+           (indent++"                    , ") (map show (Set.elems $ popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
       PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)

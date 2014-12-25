@@ -21,6 +21,7 @@ import Database.Design.Ampersand.Basics
 import Data.List(nub,transpose)
 import GHC.Exts (sortWith)
 import Database.Design.Ampersand.FSpec.FSpec
+import qualified Data.Set as Set
 import Prelude hiding (Ordering(..))
 
 fatal :: Int -> String -> a
@@ -372,7 +373,7 @@ tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
 tblcontents gens udp plug@ScalarSQL{}
    = [[Just x] | x<-atomsOf gens udp (cLkp plug)]
 tblcontents gens udp plug@BinSQL{}
-   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gens udp (mLkp plug)]
+   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-Set.elems $ fullContents gens udp (mLkp plug)]
 tblcontents gens udp plug@TblSQL{}
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other,
@@ -384,7 +385,7 @@ tblcontents gens udp plug@TblSQL{}
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomsOf gens udp c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents gens udp) fExp | a<-cAtoms ]
+                       _      -> [ (lkp a . Set.elems . fullContents gens udp) fExp | a<-cAtoms ]
                    | fld<-tail (fields plug), let fExp=fldexpr fld
                    ]
                  )

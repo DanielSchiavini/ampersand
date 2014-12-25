@@ -15,6 +15,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Pair
 import Data.Hashable
 import Data.Maybe
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ShowMeatGrinder"
@@ -131,15 +132,15 @@ instance MetaPopulations FSpec where
       where
         atoms :: Population -> [Atom]
         atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
-                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
+          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (Set.elems $ popps udp)
+                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (Set.elems $ popps udp)
           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
     allPairs :: [Paire]
     allPairs= nub (concatMap pairs (initialPops fSpec))
       where
         pairs :: Population -> [Paire]
         pairs udp = case udp of
-          PRelPopu{} -> popps udp
+          PRelPopu{} -> Set.elems $ popps udp
           PCptPopu{} -> []
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
@@ -226,7 +227,7 @@ instance MetaPopulations Declaration where
       , Pop "declaredthrough" "PropertyRule" "Property"
              [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
       , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl, uri p) | p <- pairsOf dcl]
+             [(uri dcl, uri p) | p <- Set.elems $ pairsOf dcl]
 --      , Pop "inipopu" "Declaration" "PairID"
 --             [(uri dcl,mkUriRelPopu dcl InitPop)]
       , Pop "decsgn" "Declaration" "Sign"
@@ -264,7 +265,7 @@ instance MetaPopulations Declaration where
                      Just (_,d) -> d == dcl
       pairsOf :: Declaration -> Pairs
       pairsOf d = case filter theDecl (initialPops fSpec) of
-                    []    -> []
+                    []    -> Set.empty
                     [pop] -> popps pop
                     _     -> fatal 273 "Multiple entries found in populationTable"
         where
