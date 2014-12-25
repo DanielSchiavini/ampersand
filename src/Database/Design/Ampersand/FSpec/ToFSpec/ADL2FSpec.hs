@@ -407,7 +407,7 @@ makeActivity fSpec rul
      clos xs
        = foldl f xs (nub (map fst3 xs) `intersect` nub (map thd3 xs))
          where
-          f q x = q `union`
+          f q x = q `un`
                      [(a, qs `union` qs', b') | (a, qs, b) <- q, b == x,
                       (a', qs', b') <- q, a' == x]
           ts `un` [] = ts
