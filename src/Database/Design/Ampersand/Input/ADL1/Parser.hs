@@ -28,7 +28,8 @@ keywordstxt       = [ "INCLUDE"
                     , "META"
                     , "PATTERN", "ENDPATTERN"
                     , "PROCESS", "ENDPROCESS"
-                    , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "COLS", "TABS", "SELECTONE", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                    , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "COLS", "TABS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                 -- , "SELECTONE" -- RJ/20150108: Reminder. Idea is to allow an interface for one (selection from several) atom(s).
                     , "POPULATION", "CONTAINS"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
@@ -457,7 +458,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
           pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
 
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box <$> (pKey_pos "BOX" <|> pKey_pos "ROWS" <|> pKey_pos "COLS" <|> pKey_pos "TABS" <|> pKey_pos "SELECTONE" ) <*> pBox
+pSubInterface = P_Box <$> (pKey_pos "BOX" <|> pKey_pos "ROWS" <|> pKey_pos "COLS" <|> pKey_pos "TABS") <*> pBox
                 <|> rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos
    where
      rebuild (n,p) = P_InterfaceRef p n
