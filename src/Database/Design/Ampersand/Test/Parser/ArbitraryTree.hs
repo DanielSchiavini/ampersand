@@ -72,7 +72,7 @@ genIfc = subIfc genObj
 
 subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n =
-    if n == 0 then P_InterfaceRef <$> arbitrary <*> safeStr1
+    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 
@@ -94,7 +94,6 @@ instance Arbitrary P_Context where
        <*> arbitrary  -- markup
        <*> listOf upperId -- themes
        <*> listOf arbitrary -- patterns
-       <*> listOf arbitrary -- processes
        <*> listOf arbitrary -- rules
        <*> listOf arbitrary -- relations
        <*> listOf arbitrary -- concepts
@@ -258,7 +257,7 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
         oneof [P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
                     <*> return True <*> return Nothing <*> listOf1 arbitrary,
                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary)]
+                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary <*> arbitrary)]
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
@@ -266,9 +265,9 @@ instance Arbitrary ViewHtmlTemplate where
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary =
         oneof [
-            P_ViewExp <$> arbitrary,
-            P_ViewText <$> safeStr,
-            P_ViewHtml <$> safeStr
+            P_ViewExp  <$> arbitrary <*> arbitrary,
+            P_ViewText <$> arbitrary <*> safeStr,
+            P_ViewHtml <$> arbitrary <*> safeStr
         ]
 
 instance Arbitrary PPurpose where

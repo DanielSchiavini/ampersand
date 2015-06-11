@@ -1,4 +1,5 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch']);
+// when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable']);//, 'hljs']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -31,10 +32,6 @@ AmpersandApp.config(function(RestangularProvider) {
 	
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     
-    RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
-        return data;
-    });
-    
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     
 });
@@ -64,10 +61,19 @@ AmpersandApp.run(function(Restangular, $rootScope){
     	
     	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
     	
-    	return false; // error handled
+    	return true; // proceed with success or error hooks of promise
     });
 	
 });
+
+AmpersandApp.value('cgBusyDefaults',{
+	  message:'Loading...',
+	  backdrop: true,
+	  //templateUrl: 'my_custom_template.html',
+	  //delay: 500, // in ms
+	  minDuration: 500, // in ms
+	  // wrapperClass: 'my-class my-class2'
+	});
 
 AmpersandApp.directive('myShowonhoverRow', function (){
 	return {
@@ -105,4 +111,19 @@ AmpersandApp.directive('myShowonhoverRow', function (){
             }
         });
     };
+}).filter('toArray', function() {
+	// used from: https://github.com/petebacondarwin/angular-toArrayFilter
+	return function (obj, addKey) {
+	    if (!obj) return obj;
+	    if ($.isArray(obj)) return obj; // obj is already an array
+	    if ( addKey === false ) {
+	      return Object.keys(obj).map(function(key) {
+	        return obj[key];
+	      });
+	    } else {
+	      return Object.keys(obj).map(function (key) {
+	        return Object.defineProperty(obj[key], '$key', { enumerable: false, value: key});
+	      });
+	    }
+	  };
 });

@@ -40,7 +40,7 @@ Class Atom {
 	}
 	
 	public function getAtom($interface = null){
-		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = API_INTERFACES_PATH . $interfaceId . '/' . $this->id;
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = $this->jsonld_id . '/' . $interfaceId;
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
@@ -71,8 +71,9 @@ Class Atom {
 			$tgtAtoms[] = $tgtAtom;
 		}
 		
-		// define $arr as array if $interface is not univalent and its tgtDataType a primitive datatype (i.e. not concept) 
-		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array();
+		// defaults 
+		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array(); // define $arr as array if $interface is not univalent and tgtDataType not an concept
+		else $arr = null;
 		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
@@ -93,11 +94,13 @@ Class Atom {
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
 														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept))
+														, '_sortValues_' => array()
 													 	, 'id' => $tgtAtom->id));
 				
 			}else{ // TgtConcept of interface is primitive datatype
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
 				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
+				if($interface->label == "#") $tgtAtom->id = (int) $tgtAtom->id; // convert # value to int TODO: remove when Types are implemented
 				
 				$content = $tgtAtom->id;
 			}
@@ -108,17 +111,22 @@ Class Atom {
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
 				$content[$subinterface->id] = $otherAtom;
 				
+				// _sortValues_ (if subInterface is uni)
+				if($subinterface->univalent){
+					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "concept") ? current($otherAtom)['@label'] : $otherAtom;
+				}
+				
 			}
 			
 			// determine whether value of atom must be inserted as list or as single value
 			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
-			}elseif($interface->univalent AND !($interface->tgtDataType == "concept")){ // in cause of univalent (i.e. count of $tgtAtoms <= 1) and a datatype (i.e. not concept)
+			}elseif($interface->tgtDataType == "concept"){
+				$arr[$content['id']] = $content;
+			}elseif($interface->univalent){
 				$arr = $content;
-			}elseif(!($interface->tgtDataType == "concept")){
-				$arr[] = $content;
 			}else{
-				$arr[$tgtAtom->id] = $content;
+				$arr[] = $content;
 			}			
 				
 			unset($content);			
@@ -300,8 +308,9 @@ Class Atom {
 				
 				}
 				
-				// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+				// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value
 				if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
+				else $tgtAtom = $patch['value']['id'];
 				
 				// perform editUpdate
 				if($tgtInterface->editable){
@@ -351,6 +360,7 @@ Class Atom {
 					// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
 					try{
 						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
+						else $tgtAtom = JsonPatch::get($before, $patch['path'])['id'];
 					}catch(Exception $e){
 						Notifications::addError($e->getMessage());
 					}
@@ -371,16 +381,73 @@ Class Atom {
 
 	}
 	
-	public function delete(){		
+	public function delete($requestType){	
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 		
 		$this->database->deleteAtom($this->id, $this->concept);
 		
-		// Close transaction => ROLLBACK or COMMIT.
-		$this->database->closeTransaction('Atom deleted', false, true, false);
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $this->database->closeTransaction('Atom deleted', false, $databaseCommit, false);
 		
-		return;
+		return array('notifications' 		=> Notifications::getAll()
+					,'invariantRulesHold'	=> $invariantRulesHold
+					,'requestType'			=> $requestType
+		);
 		
+	}
+	
+	public function post(&$interface, $request_data, $requestType){
+		$database = Database::singleton();
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
+		
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+		
+		// Determine differences between current state ($before) and requested state ($request_data)
+		$patches = JsonPatch::diff($before, $request_data);
+		
+		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
+		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
+		
+		// Put current state based on differences
+		foreach ((array)$patches as $key => $patch){
+			
+			//if($patch['op'] == 'remove') break; 
+			
+			$this->doPatch($patch, $interface, $before);
+		}
+		
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
+		
+		return array(	'patches' 				=> $patches
+					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+					,	'notifications' 		=> Notifications::getAll()
+					,	'invariantRulesHold'	=> $invariantRulesHold
+					,	'requestType'			=> $requestType
+					);
 	}
 	
 	private function getView($viewId = null){

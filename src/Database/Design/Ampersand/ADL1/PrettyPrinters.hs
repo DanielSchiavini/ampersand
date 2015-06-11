@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Database.Design.Ampersand.ADL1.PrettyPrinters
+module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
@@ -31,8 +31,8 @@ perlinePrefix :: Pretty a => String -> [a] -> Doc
 perlinePrefix pref xs = vsep $ map addPrefix xs
            where addPrefix x = text pref <+> pretty x
 
-quoteWith :: String -> String -> String -> Doc
-quoteWith l r x = enclose (text l) (text r) (text x)
+--quoteWith :: String -> String -> String -> Doc
+--quoteWith l r x = enclose (text l) (text r) (text x)
 
 quote :: String -> Doc
 quote = dquotes.text.escapeAll
@@ -100,7 +100,7 @@ prettyLabel :: String -> [[String]] -> Doc
 prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup thms pats pprcs rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -108,7 +108,6 @@ instance Pretty P_Context where
                <+\> perline metas
                <+\> themes
                <+\> perline ps
-               <+\> perline pprcs
                <+\> perline pats
                <+\> perline rs
                <+\> perline ds
@@ -278,7 +277,7 @@ instance Pretty a => Pretty (P_ObjDef a) where
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
-                P_InterfaceRef _ str -> text "INTERFACE" <+> maybeQuote str
+                P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
             where box_type Nothing  = text "BOX"
                   box_type (Just x) = text x -- ROWS, COLS, TABS
 
@@ -307,10 +306,10 @@ instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp (P_Obj nm _ ctx _ _ _))
-                            = maybeQuote nm <+> text ":" <~> ctx
-    pretty (P_ViewText txt) = text "TXT" <+> quote txt
-    pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
+    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _))
+                              = maybeQuote nm <+> text ":" <~> ctx
+    pretty (P_ViewText _ txt) = text "TXT" <+> quote txt
+    pretty (P_ViewHtml _ htm) = text "PRIMHTML" <+> quote htm
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =
