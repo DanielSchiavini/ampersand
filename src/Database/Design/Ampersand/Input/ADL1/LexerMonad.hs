@@ -9,7 +9,7 @@
 module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
     ,  addPos
-    , openBracket, closeBracket, checkBracketsAtEOF
+    ,  closeBracket, checkBracketsAtEOF
     , lexerError, lexerWarning
     , runLexerMonad
     ) where
@@ -65,8 +65,6 @@ runLexerMonad opts file (LM f) =
         Left err -> Left err
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
--- TODO: These methods are not being used anywhere
-
 lexerError :: LexerErrorInfo -> FilePos -> LexerMonad a
 lexerError err pos =
     LM (\_ _ _ -> Left (LexerError pos err))
@@ -76,9 +74,6 @@ lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
 
-openBracket :: Char -> LexerMonad ()
-openBracket c = LM (\_ pos brackets ->
-    Right ( (), [], pos, (pos, c) : brackets ))
 
 closeBracket :: Char -> LexerMonad ()
 closeBracket c = LM (\_ pos brackets ->
