@@ -12,7 +12,6 @@ module Database.Design.Ampersand.Input.ADL1.LexerMonad
     , openBracket, closeBracket, checkBracketsAtEOF
     , lexerError, lexerWarning
     , runLexerMonad
-    , getOpts
     ) where
 
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
@@ -67,8 +66,6 @@ runLexerMonad opts file (LM f) =
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
 -- TODO: These methods are not being used anywhere
-getOpts :: LexerMonad [Options]
-getOpts = LM (\opts pos brackets -> Right (opts, [], pos, brackets))
 
 getPos :: LexerMonad FilePos
 getPos = LM (\_ pos brackets -> Right (pos, [], pos, brackets))
