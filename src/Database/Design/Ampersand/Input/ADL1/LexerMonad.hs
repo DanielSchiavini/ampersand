@@ -8,7 +8,7 @@
 
 module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
-    ,  nextPos, addPos
+    ,  addPos
     , openBracket, closeBracket, checkBracketsAtEOF
     , lexerError, lexerWarning
     , runLexerMonad
@@ -66,12 +66,6 @@ runLexerMonad opts file (LM f) =
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
 -- TODO: These methods are not being used anywhere
-
-incPos :: Int -> LexerMonad ()
-incPos i = LM (\_ pos brackets -> Right ((), [], addPos i pos, brackets))
-
-nextPos :: Char -> LexerMonad ()
-nextPos c = LM (\_ pos brackets -> Right ( (), [], updatePos pos c, brackets ))
 
 lexerError :: LexerErrorInfo -> FilePos -> LexerMonad a
 lexerError err pos =
