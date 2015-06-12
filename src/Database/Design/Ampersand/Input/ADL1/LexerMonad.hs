@@ -73,8 +73,3 @@ lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
 
-matchBracket :: Char -> Char -> Bool
-matchBracket '(' ')' = True
-matchBracket '[' ']' = True
-matchBracket '{' '}' = True
-matchBracket _ _ = False
