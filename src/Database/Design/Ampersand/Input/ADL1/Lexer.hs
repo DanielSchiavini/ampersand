@@ -46,7 +46,7 @@ keywords      = [ "INCLUDE"
                 , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "PROCESS", "ENDPROCESS"
-                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE", "LINKTO"
                 , "POPULATION", "CONTAINS"
                 , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                 , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
@@ -128,6 +128,11 @@ mainLexer p ('\'':ss)
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
 
+-- Special case for < since it's the beginning of operators but also a symbol when alone
+mainLexer p ('<':d:s) = if isOperator ['<',d]
+                        then returnToken (LexOperator ['<',d]) p mainLexer (addPos 2 p) s
+                        else returnToken (LexSymbol    '<')    p mainLexer (addPos 1 p) (d:s)
+
 mainLexer p cs@(c:s)
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
@@ -169,6 +174,9 @@ iskw = locatein keywords
 
 isSymbol :: Char -> Bool
 isSymbol = locatein symbols
+
+isOperator :: String -> Bool
+isOperator  = locatein operators
 
 isOperatorBegin :: Char -> Bool
 isOperatorBegin  = locatein (map head operators)

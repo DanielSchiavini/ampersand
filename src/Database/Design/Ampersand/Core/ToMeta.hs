@@ -41,7 +41,6 @@ instance MakeMeta P_Context where
          , ctx_markup= makeMeta f (ctx_markup ctx)
          , ctx_thms  =            (ctx_thms ctx)
          , ctx_pats  = makeMeta f (ctx_pats ctx)
-         , ctx_PPrcs = makeMeta f (ctx_PPrcs ctx)
          , ctx_rs    = makeMeta f (ctx_rs ctx)
          , ctx_ds    = makeMeta f (ctx_ds ctx)
          , ctx_cs    = makeMeta f (ctx_cs ctx)
@@ -159,7 +158,8 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
 instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
   makeMeta f vs
    = case vs of 
-      P_ViewExp{}  -> P_ViewExp { vs_obj = makeMeta f (vs_obj vs)
+      P_ViewExp{}  -> P_ViewExp { vs_nr  = vs_nr vs
+                                , vs_obj = makeMeta f (vs_obj vs)
                                 }
       P_ViewText{} -> vs
       P_ViewHtml{} -> vs
@@ -260,6 +260,7 @@ instance MakeMeta a => MakeMeta (P_SubIfc a) where
                                         , si_box   = makeMeta f (si_box sub)
                                         }
       P_InterfaceRef{} -> P_InterfaceRef{ si_ori   = makeMeta f (si_ori sub)
+                                        , si_isLink =            si_isLink sub
                                         , si_str   =            (si_str sub)
                                         }
 

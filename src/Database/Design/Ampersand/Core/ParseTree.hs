@@ -61,8 +61,7 @@ data P_Context
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_PPrcs ::  [P_Pattern]      -- ^ The processes as defined by the parser
-         , ctx_rs ::     [P_Rule TermPrim]         -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -253,7 +252,7 @@ instance Traversable Term where
 instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
-  traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
+  traverse _ (P_InterfaceRef o a b) = pure (P_InterfaceRef o a b)
   traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
@@ -440,6 +439,7 @@ data P_SubIfc a
                                , si_class :: Maybe String
                                , si_box :: [P_ObjDef a] }
               | P_InterfaceRef { si_ori :: Origin
+                               , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: String }
                 deriving (Eq, Show)
 
@@ -503,9 +503,9 @@ instance Traversable P_ViewD where
  traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
 type P_ViewSegment = P_ViewSegmt TermPrim
-data P_ViewSegmt a  = P_ViewExp  { vs_obj :: P_ObjDef a }
-                    | P_ViewText { vs_txt :: String }
-                    | P_ViewHtml { vs_htm :: String }
+data P_ViewSegmt a  = P_ViewExp  { vs_nr ::Integer, vs_obj :: P_ObjDef a }
+                    | P_ViewText { vs_nr ::Integer, vs_txt :: String }
+                    | P_ViewHtml { vs_nr ::Integer, vs_htm :: String }
                       deriving (Eq, Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
@@ -521,9 +521,9 @@ data ViewText = ViewTextTemplateFile String
 instance Functor P_ViewSegmt where fmap = fmapDefault
 instance Foldable P_ViewSegmt where foldMap = foldMapDefault
 instance Traversable P_ViewSegmt where
- traverse f (P_ViewExp  a) = P_ViewExp <$> traverse f a
- traverse _ (P_ViewText a) = pure (P_ViewText a)
- traverse _ (P_ViewHtml a) = pure (P_ViewHtml a)
+ traverse f (P_ViewExp i a) = P_ViewExp i <$> traverse f a
+ traverse _ (P_ViewText i a) = pure (P_ViewText i a)
+ traverse _ (P_ViewHtml i a) = pure (P_ViewHtml i a)
 
 instance Traced (P_ViewD a) where
  origin = vd_pos
@@ -663,7 +663,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_thms   = concatMap ctx_thms contexts
       , ctx_pats   = concatMap ctx_pats contexts
-      , ctx_PPrcs  = concatMap ctx_PPrcs contexts
       , ctx_rs     = concatMap ctx_rs contexts
       , ctx_ds     = concatMap ctx_ds contexts
       , ctx_cs     = concatMap ctx_cs contexts
