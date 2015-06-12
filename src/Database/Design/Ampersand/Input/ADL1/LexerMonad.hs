@@ -8,7 +8,7 @@
 
 module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
-    , getPos, incPos, nextPos, addPos
+    , incPos, nextPos, addPos
     , openBracket, closeBracket, checkBracketsAtEOF
     , lexerError, lexerWarning
     , runLexerMonad
