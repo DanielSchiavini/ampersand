@@ -9,7 +9,7 @@
 module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
     ,  addPos
-    ,  closeBracket, checkBracketsAtEOF
+    ,  checkBracketsAtEOF
     , lexerError, lexerWarning
     , runLexerMonad
     ) where
@@ -73,18 +73,6 @@ lexerWarning :: LexerWarningInfo -> FilePos -> LexerMonad ()
 lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
-
-
-closeBracket :: Char -> LexerMonad ()
-closeBracket c = LM (\_ pos brackets ->
-    case brackets of
-        [] -> Left (LexerError pos (TooManyClose c))
-        (pos2, c2):rest
-            | matchBracket c2 c ->
-                Right ((), [], pos, rest)
-            | otherwise ->
-                Left (LexerError pos (UnexpectedClose c pos2 c2))
-    )
 
 checkBracketsAtEOF :: LexerMonad ()
 checkBracketsAtEOF = LM (\_ pos brackets ->
